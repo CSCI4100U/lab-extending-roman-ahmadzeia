@@ -6,49 +6,82 @@ import 'package:twitter/Tweet.dart';
 import 'dart:math';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'NewReplyPage.dart';
-import 'SearchPage.dart';
+import 'HomePage.dart';
 
-class HomePage extends StatefulWidget{
-  const HomePage({Key? key}):super(key: key);
+
+class SearchPage extends StatefulWidget{
+  const SearchPage({Key? key}):super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePage();
+  State<SearchPage> createState() => _SearchPage();
 }
 
-class _HomePage extends State<HomePage>{
-
-  final GlobalKey<_HomePage> _homeKey = GlobalKey<_HomePage>();
-
+class _SearchPage extends State<SearchPage>{
+  final GlobalKey<_SearchPage> _homeKey = GlobalKey<_SearchPage>();
   var formKey = GlobalKey<FormState>();
+  late TextEditingController _searchController;
 
   void refreshHomePage() {
     setState(() {
     });
   }
 
-  @override
-  Widget build(BuildContext context){
-    return Scaffold(
-      // Image.file(File('DirectoryLocation/imageName.jpg')
-      appBar: AppBar(title: SizedBox(child: Image.asset('assets/logo.png'), width: 40, height: 40),
-      actions: [IconButton(padding:EdgeInsets.only(right:30),icon: Icon(Icons.send),onPressed: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (_) {
-                        return NewTweetPage();
-                      }));
-                    },)],
-                    automaticallyImplyLeading: false,
-                    leading: IconButton(padding: EdgeInsets.only(left:20),icon: Icon(Icons.search,size: 35), onPressed: (){
-                      Navigator.of(context).push(MaterialPageRoute(builder:(_){
-                        return SearchPage();
-                      }));
-                    })
-                    ),
+ Future<void> _navigateToHomePage() async {
+    final result = await Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => HomePage(),
+    ));
 
-      body: FutureBuilder<List<Tweet>>(
-        future: DatabaseHelper.instance.getAllTweets(),
-        builder:(BuildContext context, AsyncSnapshot<List<Tweet>> snapshot){
-            if (snapshot.connectionState == ConnectionState.waiting) {
+    if (result != null) {
+      refreshHomePage();
+    }
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+  
+  @override
+  Widget build(BuildContext context)
+  {
+    return Scaffold(
+      appBar: AppBar(title: Text('Search'),),
+
+      body: Column(children: [Expanded(flex: 1,child:Text('Search for something below')),
+      Expanded(child: SizedBox(width: MediaQuery.of(context).size.width * 0.8,
+        child: TextFormField(   
+                          controller: _searchController,   
+                           onChanged: (text) {
+                        refreshHomePage(); 
+                      },  
+                          decoration: InputDecoration(
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                              borderSide: const BorderSide(color: Colors.black),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                              borderSide: const BorderSide(color: Colors.black),
+                            ),
+                            hintText: 'Search for a tweet',
+                          ),
+                          validator: (String? text) {
+                            if (text == null || text.isEmpty) {
+                              return 'Enter text!';
+                            }
+                            return null;
+                          },
+                        ),
+      )),
+
+      Expanded(flex: 8,child:
+      FutureBuilder<List<Tweet>>(
+        future:  DatabaseHelper.instance.getAllSearchTweets(_searchController.text),
+        builder: (BuildContext context, AsyncSnapshot<List<Tweet>> snapshot)
+        {
+           if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator(color: Colors.blue));
                  }
             if (snapshot.hasError) {
@@ -57,18 +90,19 @@ class _HomePage extends State<HomePage>{
             if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
                 return Center(child: Text('No Tweets'));
                 } 
+
             else{
 
-              List<Tweet> tweets = snapshot.data!;
-              // tweets = tweets.reversed.toList(); // newest tweets to be seen first (changed to SQL Query implementation)
+              List<Tweet> tweets_searched = snapshot.data!;
+              // tweets = tweets.reversed.toList(); // newest tweets to be seen first
 
 
               return Padding(
                 padding: const EdgeInsets.all(20),
                 child: ListView.builder(
-                  itemCount: tweets.length,
+                  itemCount: tweets_searched.length,
                   itemBuilder: ((context, index){
-                    Tweet t = tweets[index];
+                    Tweet t = tweets_searched[index];
                         return Container(
                           color: Color.fromARGB(248, 255, 255, 255),
                           margin: EdgeInsets.only(top: 35),
@@ -91,7 +125,7 @@ class _HomePage extends State<HomePage>{
                             '${t.userLongName.toString()}  @${t.userShortName.toString()}',
                             style: GoogleFonts.roboto(fontSize: 18,fontWeight:FontWeight.bold),
                           ),
-                          SizedBox(height:MediaQuery.of(context).size.height*0.01),
+                          SizedBox(height:8),
                     
                           Text(t.description, style: GoogleFonts.roboto(fontSize: 18)),
                           t.imageURL != null && t.imageURL.isNotEmpty
@@ -100,11 +134,11 @@ class _HomePage extends State<HomePage>{
                               width: double.infinity,
                             )
                           : Container(),
-
+              
                           SizedBox(height:20),
                           Text(t.timeString.toString().substring(0,5), style:TextStyle(fontSize: 16)),
                           SizedBox(height:5),
-
+              
                          
                           Row(
                             children: [
@@ -113,25 +147,26 @@ class _HomePage extends State<HomePage>{
                               color: t.isLiked == 1 ? Colors.red : Colors.black,
                               onPressed: () {
                                DatabaseHelper.instance.toggleLike(t.id, t.isLiked);
-                               refreshHomePage();
+                               _navigateToHomePage();
                               },
                             ),
                               
                               Text('${t.numLikes}'),
+              
+                            SizedBox(width: MediaQuery.of(context).size.width * 0.02),
 
-                              SizedBox(width: MediaQuery.of(context).size.width * 0.02),
-
+              
                               IconButton(icon:Icon(Icons.repeat),
                               color: t.numRetweets == 1? Colors.blue : Colors.black, 
                               onPressed:(){
                                 DatabaseHelper.instance.toggleRetweet(t.id, t.numRetweets);
-                                refreshHomePage();
+                                _navigateToHomePage();
                               },),
-
+              
                               Text('${t.numRetweets}'),
-
+              
                               SizedBox(width:15),
-
+              
                               IconButton(icon: Icon(Icons.comment), onPressed:()async{
                                    final result = await Navigator.of(context)
                                    .push(MaterialPageRoute(builder: (_) {
@@ -141,19 +176,19 @@ class _HomePage extends State<HomePage>{
                               _homeKey.currentState?.setState(() {});
                               }
                               }),
-
+              
                               Text('${t.numComments}'),
-
+              
                               IconButton(icon:Icon(Icons.bookmark),
                               color: t.isBookmarked == 1 ? Colors.yellow:Colors.black ,
                                onPressed: (){
                                   DatabaseHelper.instance.toggleBookmark(t.id, t.isBookmarked);
-                                  refreshHomePage();
+                                  _navigateToHomePage();
                                }
                              ,)
                             ],
                           ),
-
+              
                            FutureBuilder<List<Comment>>(
                     future: DatabaseHelper.instance.getCommentsForTweet(t.id),
                     builder: (BuildContext context, AsyncSnapshot<List<Comment>> snapshot) {
@@ -193,7 +228,7 @@ class _HomePage extends State<HomePage>{
                         );
                       } 
                   })
-
+              
                         ],
                       ),
                     ),
@@ -214,19 +249,16 @@ class _HomePage extends State<HomePage>{
                                               Navigator.of(context).pop();
                                             }, child: const Text('No',style:TextStyle(color:Colors.white))),
                                             TextButton(onPressed: () async{
-                                              Navigator.of(context).pop();
-
-                                              // delete student
-
+                                              Navigator.of(context).pop();              
                                               int result = await DatabaseHelper.instance.deleteTweet(t.id!);
+                                              _navigateToHomePage();
+
                                               if( result > 0 ){
                                                 Fluttertoast.showToast(msg: 'Tweet Hidden');
-                                                setState((){});
-                                                // build function will be called
                                               }
-
+              
                                             }, child: const Text('Yes',style:TextStyle(color:Colors.white))),
-
+              
                                           ],
                                         );
                           }
@@ -234,18 +266,47 @@ class _HomePage extends State<HomePage>{
                   
                       },
                     ),
-
+              
                   ],
                 ),
               );
-             }
-
+                         }
+              
                 )
               ));
             }
-        }
-      )
 
+        }
+      ,)
+      )],)
+      
+      
     );
   }
 }
+
+// Padding(padding: EdgeInsets.all(16),
+//             child: Column(children: [
+//               Text('Search For Something!',style:GoogleFonts.roboto(fontSize: 20),textAlign: TextAlign.left,),
+//               TextFormField(
+//                       decoration: InputDecoration(
+//                         enabledBorder: OutlineInputBorder(
+//                           borderRadius: BorderRadius.circular(20.0),
+//                           borderSide: const BorderSide(color: Colors.black),
+//                         ),
+//                         focusedBorder: OutlineInputBorder(
+//                           borderRadius: BorderRadius.circular(25.0),
+//                           borderSide: const BorderSide(color: Colors.black),
+//                         ),
+//                         hintText: 'Search for something!',
+//                       ),
+//                       validator: (String? text) {
+//                         if (text == null || text.isEmpty) {
+//                           return 'Missing Entry!';
+//                         }
+//                         searchText = text;
+//                         return null;
+//                       },
+//                     ),
+//                     IconButton(icon: Icon(Icons.search), onPressed: (){},)
+//             ],))

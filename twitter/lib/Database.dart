@@ -47,8 +47,9 @@ Future<void> _createTweetsTable(Database db) async {
         numComments INTEGER,
         numRetweets INTEGER,
         numLikes INTEGER,
-        isLiked INTEGER
-      )
+        isLiked INTEGER,
+        isBookmarked INTEGER
+        )
     ''');
   }
 
@@ -83,7 +84,7 @@ Future<void> _createTweetsTable(Database db) async {
     Database db = await instance.database;
     
 
-    List<Map<String, dynamic>> listMap = await db.query('table_tweets');
+    List<Map<String, dynamic>> listMap = await db.query('table_tweets', orderBy:'isBookmarked DESC, timeString DESC');
 
     for (var TweetMap in listMap) {
       Tweet t = Tweet.fromMap(TweetMap);
@@ -93,6 +94,29 @@ Future<void> _createTweetsTable(Database db) async {
     await Future.delayed(const Duration(seconds: 2));
     return tweets;
   }
+
+Future<List<Tweet>> getAllSearchTweets(String searchTerm) async {
+  Database db = await instance.database;
+
+  if (searchTerm.isNotEmpty) {
+    List<Map<String, dynamic>> listMap = await db.query(
+      'table_tweets',
+      where: 'description LIKE ?',
+      whereArgs: ['%$searchTerm%'], 
+    );
+
+    List<Tweet> tweets = [];
+
+    for (var tweetMap in listMap) {
+      Tweet t = Tweet.fromMap(tweetMap);
+      tweets.add(t);
+    }
+
+    return tweets;
+  } else {
+    return [];
+  }
+}
 
   Future<int> updateTweet(Tweet t) async { 
     Database db = await instance.database;
@@ -119,6 +143,25 @@ Future<void> _createTweetsTable(Database db) async {
     );
   }
 
+  Future<void> incrementLikes(int id,) async {
+    Database db = await instance.database;
+
+    await db.rawUpdate('UPDATE table_tweets SET numLikes = numLikes + 1 WHERE id = ?',
+    [id]);
+  }
+
+  Future<void> incrementRetweets(int id) async{
+    Database db = await instance.database;
+    await db.rawUpdate('UPDATE table_tweets SET numRetweets = numRetweets + 1 WHERE id = ?'
+    [id]);
+  }
+
+  Future <void> decrementCount(int id, String variable) async {
+    Database db = await instance.database;
+    await db.rawUpdate('UPDATE table_tweets SET $variable = $variable - 1 WHERE ID =?'
+    [id]);
+  }
+ 
 
 Future<List<Comment>> getCommentsForTweet(int tweetId) async {
     List<Comment> comments = [];
@@ -142,7 +185,38 @@ Future<List<Comment>> getCommentsForTweet(int tweetId) async {
     int result = await db.insert('table_comments', comment.toMap());
     return result;
   }
+
+  Future<void> toggleLike(int id, int currentLikeStatus) async {
+  Database db = await instance.database;
+  if (currentLikeStatus == 1) {
+    await db.rawUpdate('UPDATE table_tweets SET numLikes = numLikes - 1, isLiked = 0 WHERE id = ?', [id]);
+  } else {
+    await db.rawUpdate('UPDATE table_tweets SET numLikes = numLikes + 1, isLiked = 1 WHERE id = ?', [id]);
+  }
 }
+
+Future<void> toggleRetweet(int id, int currentRetweetStatus) async {
+  Database db = await instance.database;
+  if (currentRetweetStatus == 1){
+    await db.rawUpdate('UPDATE table_tweets SET numRetweets = numRetweets - 1, numRetweets = 0 WHERE id = ?', [id]);
+    }else{
+    await db.rawUpdate('UPDATE table_tweets SET numRetweets = numRetweets + 1, numRetweets = 1 WHERE id = ?', [id]);
+   }
+  }
+
+Future<void> toggleBookmark(int id, int currentBookmarkStatus) async {
+  Database db = await instance.database;
+  if (currentBookmarkStatus == 1) {
+    await db.rawUpdate('UPDATE table_tweets SET isBookmarked = 0 WHERE id = ?', [id]);
+  }else{
+    await db.rawUpdate('UPDATE table_tweets SET isBookmarked = 1 WHERE id = ?', [id]);
+
+  }
+  }
+}
+
+
+
 
 
 

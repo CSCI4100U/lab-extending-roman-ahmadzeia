@@ -9,6 +9,7 @@ class Tweet{
   late int numRetweets;
   late int numLikes;
   late int isLiked;
+  late int isBookmarked;
   
 
 
@@ -22,7 +23,8 @@ class Tweet{
     required this.numComments,
     required this.numRetweets,
     required this.numLikes,
-    required this.isLiked,});
+    required this.isLiked,
+    required this.isBookmarked});
 
   Map<String, dynamic> toMap() 
   {
@@ -37,6 +39,7 @@ class Tweet{
     map['numRetweets'] = numRetweets;
     map['numLikes'] = numLikes;
     map['isLiked'] = isLiked;
+    map['isBookmarked'] = isBookmarked;
     return map;
   }
 
@@ -52,6 +55,7 @@ class Tweet{
     numRetweets = map['numRetweets'] ?? 0;
     numLikes = map['numLikes'] ?? 0;
     isLiked = map['isLiked'];
+    isBookmarked = map['isBookmarked'];
 
   }
 

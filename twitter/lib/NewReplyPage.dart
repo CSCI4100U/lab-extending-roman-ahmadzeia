@@ -41,7 +41,8 @@ class _NewReplyPageState extends State<NewReplyPage> {
                 'Replying to: ${widget.originalTweet.userShortName}',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+
               TextFormField(
                 autofocus: true,
                 maxLines: 6,
@@ -65,11 +66,12 @@ class _NewReplyPageState extends State<NewReplyPage> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+
               Row(
                 children: [
                   SizedBox(
-                    width: 170,
+                    width: MediaQuery.of(context).size.width * 0.3,
                     child: TextFormField(
                         decoration: InputDecoration(
                           enabledBorder: OutlineInputBorder(
@@ -91,10 +93,9 @@ class _NewReplyPageState extends State<NewReplyPage> {
                         },
                       ),
                   ),
-                  Spacer(),
-
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.02),
                     SizedBox(
-                      width: 170,
+                      width: MediaQuery.of(context).size.width * 0.4,
                       child: TextFormField(
                         decoration: InputDecoration(
                           enabledBorder: OutlineInputBorder(
@@ -116,6 +117,9 @@ class _NewReplyPageState extends State<NewReplyPage> {
                         },
                       ),
                     ),
+
+                  Spacer(flex: 3),      
+
                   IconButton(
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {

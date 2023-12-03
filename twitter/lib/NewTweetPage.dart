@@ -68,7 +68,7 @@ Widget build(BuildContext context) {
                   return null;
                 },
               ),
-              SizedBox(height: 16), // Add some spacing between the text field sections
+          SizedBox(height: MediaQuery.of(context).size.height * 0.02),
               Row(
                 children: [
                   Expanded(
@@ -93,7 +93,7 @@ Widget build(BuildContext context) {
                       },
                     ),
                   ),
-                  SizedBox(width: 16), // Add some spacing between the fields
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.02),
                   Expanded(
                     child: TextFormField(
                       decoration: InputDecoration(
@@ -118,13 +118,13 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
-              SizedBox(height: 16), // Add some spacing between the text field sections
+             SizedBox(height: MediaQuery.of(context).size.height* 0.02),
               Row(
                 children: [
                   Icon(Icons.camera_alt),
-                  Spacer(),
+                  Expanded(flex:1, child: Spacer()),
                   SizedBox(
-                    width: 350,
+                    width: MediaQuery.of(context).size.width * 0.8,
                     child: TextFormField(
                       maxLines: 1,
                       decoration: InputDecoration(
@@ -163,6 +163,7 @@ Widget build(BuildContext context) {
                           numRetweets: 0,
                           numLikes: 0,
                           isLiked: 0,
+                          isBookmarked: 0,
                         );
                         int result = await DatabaseHelper.instance.insertTweet(t);
                         if (result > 0) {
