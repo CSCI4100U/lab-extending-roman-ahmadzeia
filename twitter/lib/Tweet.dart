@@ -9,7 +9,6 @@ class Tweet{
   late int numRetweets;
   late int numLikes;
   late int isLiked;
- late List<Comment> comments; 
   
 
 
@@ -23,8 +22,7 @@ class Tweet{
     required this.numComments,
     required this.numRetweets,
     required this.numLikes,
-    required this.isLiked,
-    required this.comments});
+    required this.isLiked,});
 
   Map<String, dynamic> toMap() 
   {
@@ -39,7 +37,6 @@ class Tweet{
     map['numRetweets'] = numRetweets;
     map['numLikes'] = numLikes;
     map['isLiked'] = isLiked;
-    map['comments'] = comments.map((comment)=>comment.toMap()).toList();
     return map;
   }
 
@@ -55,34 +52,33 @@ class Tweet{
     numRetweets = map['numRetweets'] ?? 0;
     numLikes = map['numLikes'] ?? 0;
     isLiked = map['isLiked'];
-    comments = (map['comments'] as List<dynamic>?)
-          ?.map((commentMap) => Comment.fromMap(commentMap))
-          .toList() ?? [];
+
   }
 
 
 }
 
 class Comment {
-  int id;
+  late int id;
   int tweetId;
   String username;
+  String name;
   String text;
   String timestamp;
 
   Comment({
-    required this.id,
     required this.tweetId,
     required this.username,
+    required this.name,
     required this.text,
     required this.timestamp,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'tweetId': tweetId,
       'username': username,
+      'name': name,
       'text': text,
       'timestamp': timestamp,
     };
@@ -90,9 +86,9 @@ class Comment {
 
   factory Comment.fromMap(Map<String, dynamic> map) {
     return Comment(
-      id: map['id'],
       tweetId: map['tweetId'],
       username: map['username'],
+      name: map['name'],
       text: map['text'],
       timestamp: map['timestamp'],
     );

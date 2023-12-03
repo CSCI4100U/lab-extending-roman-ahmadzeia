@@ -58,6 +58,7 @@ Future<void> _createTweetsTable(Database db) async {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tweetId INTEGER,
         username TEXT,
+        name TEXT,
         text TEXT,
         timestamp TEXT,
         FOREIGN KEY (tweetId) REFERENCES table_tweets(id)
@@ -118,26 +119,25 @@ Future<void> _createTweetsTable(Database db) async {
     );
   }
 
-  Future<List<Tweet>> getCommentsForTweet(int id) async {
-    Database db = await instance.database;
 
+Future<List<Comment>> getCommentsForTweet(int tweetId) async {
+    List<Comment> comments = [];
+    Database db = await instance.database;
     List<Map<String, dynamic>> listMap = await db.query(
       'table_comments',
       where: 'tweetId = ?',
-      whereArgs: [id],
+      whereArgs: [tweetId],
     );
-
-    List<Tweet> comments = [];
-
-    for (var commentMap in listMap) {
-      Tweet comment = Tweet.fromMap(commentMap);
-      comments.add(comment);
+    for (var CommentMap in listMap) {
+      Comment c = Comment.fromMap(CommentMap);
+      comments.add(c);
     }
-
+    await Future.delayed(const Duration(seconds: 2));
     return comments;
   }
 
-  Future<int> insertComment(Tweet comment) async {
+
+  Future<int> insertComment(Comment comment) async {
     Database db = await instance.database;
     int result = await db.insert('table_comments', comment.toMap());
     return result;

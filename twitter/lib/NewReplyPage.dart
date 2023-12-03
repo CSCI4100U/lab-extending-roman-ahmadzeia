@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:twitter/Tweet.dart';
 import 'package:twitter/Database.dart';
 import 'package:intl/intl.dart';
+import 'HomePage.dart';
 
 
 class NewReplyPage extends StatefulWidget {
   final Tweet originalTweet;
+  final Function refreshFunction;
 
-  const NewReplyPage({Key? key, required this.originalTweet}) : super(key: key);
+  
+
+    const NewReplyPage({Key? key, required this.originalTweet, required this.refreshFunction})
+      : super(key: key);
+
+ 
 
   @override
   _NewReplyPageState createState() => _NewReplyPageState();
@@ -15,7 +22,7 @@ class NewReplyPage extends StatefulWidget {
 
 class _NewReplyPageState extends State<NewReplyPage> {
   var formKey = GlobalKey<FormState>();
-  late String replyText;
+  late String replyText, username, name;
 
   @override
   Widget build(BuildContext context) {
@@ -61,30 +68,80 @@ class _NewReplyPageState extends State<NewReplyPage> {
               SizedBox(height: 16),
               Row(
                 children: [
-                  const Spacer(),
+                  SizedBox(
+                    width: 170,
+                    child: TextFormField(
+                        decoration: InputDecoration(
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                            borderSide: const BorderSide(color: Colors.black),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                            borderSide: const BorderSide(color: Colors.black),
+                          ),
+                          hintText: 'Username',
+                        ),
+                        validator: (String? text) {
+                          if (text == null || text.isEmpty) {
+                            return 'Enter username!';
+                          }
+                          username = text;
+                          return null;
+                        },
+                      ),
+                  ),
+                  Spacer(),
+
+                    SizedBox(
+                      width: 170,
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                            borderSide: const BorderSide(color: Colors.black),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                            borderSide: const BorderSide(color: Colors.black),
+                          ),
+                          hintText: 'Name',
+                        ),
+                        validator: (String? text) {
+                          if (text == null || text.isEmpty) {
+                            return 'Enter name!';
+                          }
+                          name = text;
+                          return null;
+                        },
+                      ),
+                    ),
                   IconButton(
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         DateTime current = DateTime.now();
                         String stringFormatTime = DateFormat('kk:mm:ss \n EEE d MMM').format(current);
-                        Tweet reply = Tweet(
-                          userShortName: 'YourUsername', // Set the user's username
-                          userLongName: 'YourName', // Set the user's name
-                          timeString: stringFormatTime,
-                          description: replyText,
-                          imageURL: '', // You may add image URL if needed
-                          numComments: 0,
-                          numRetweets: 0,
-                          numLikes: 0,
-                          isLiked: 0,
-                        );
+                          // int id;
+                          // int tweetId;
+                          // String username;
+                          // String text;
+                          // String timestamp;
+                        Comment reply = Comment(
+                          tweetId: widget.originalTweet.id,
+                          username: username,
+                          name: name,
+                          text: replyText,
+                          timestamp: stringFormatTime);
+
                         int result = await DatabaseHelper.instance.insertComment(reply);
                         if (result > 0) {
-                          // Update the comment count in the original tweet
                           await DatabaseHelper.instance.incrementCommentCount(widget.originalTweet.id);
-                          Navigator.of(context).pop(); // Close the reply page
+                          widget.refreshFunction();
+                          Navigator.pop(context, true);
+
                         }
                       }
+                    
                     },
                     icon: const Icon(Icons.send),
                   ),

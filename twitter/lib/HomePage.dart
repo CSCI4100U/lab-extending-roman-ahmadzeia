@@ -15,8 +15,17 @@ class HomePage extends StatefulWidget{
 }
 
 class _HomePage extends State<HomePage>{
- var formKey = GlobalKey<FormState>();
- int isLiked = 0;
+
+  final GlobalKey<_HomePage> _homeKey = GlobalKey<_HomePage>();
+
+  var formKey = GlobalKey<FormState>();
+
+  int isLiked = 0;
+
+  void refreshHomePage() {
+    setState(() {
+    });
+  }
 
   @override
   Widget build(BuildContext context){
@@ -35,13 +44,13 @@ class _HomePage extends State<HomePage>{
         future: DatabaseHelper.instance.getAllTweets(),
         builder:(BuildContext context, AsyncSnapshot<List<Tweet>> snapshot){
             if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return Center(child: CircularProgressIndicator(color: Colors.blue));
                  }
             if (snapshot.hasError) {
                 return Text("Error: ${snapshot.error}");
                 }
             if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-                return Center(child: Text('No Records Found'));
+                return Center(child: Text('No Tweets'));
                 } 
             else{
 
@@ -56,6 +65,7 @@ class _HomePage extends State<HomePage>{
                   itemBuilder: ((context, index){
                     Tweet t = tweets[index];
                         return Container(
+                          color: Color.fromARGB(248, 255, 255, 255),
                           margin: EdgeInsets.only(top: 35),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,53 +117,70 @@ class _HomePage extends State<HomePage>{
                             ),
                               
                               Text('${t.numLikes}'),
+
                               SizedBox(width:15),
+
                               IconButton(icon:Icon(Icons.repeat), onPressed:(){},),
+
                               Text('${t.numRetweets}'),
+
                               SizedBox(width:15),
-                              IconButton(icon: Icon(Icons.comment), onPressed:(){
-                                   Navigator.of(context)
+
+                              IconButton(icon: Icon(Icons.comment), onPressed:()async{
+                                   final result = await Navigator.of(context)
                                    .push(MaterialPageRoute(builder: (_) {
-                             return NewReplyPage(originalTweet: t);
+                             return NewReplyPage(key: formKey, originalTweet: t,  refreshFunction: refreshHomePage);
                       }));
+                              if (result == true) {
+                              _homeKey.currentState?.setState(() {});
+                              }
                               }),
+
                               Text('${t.numComments}'),
-                              Text(t.id.toString()),
                             ],
                           ),
 
-                          // FutureBuilder<List<Tweet>>(future:
-                          //  DatabaseHelper.instance.getCommentsForTweet(t.id), 
-                          //  builder:(BuildContext context, AsyncSnapshot<List<Tweet>> snapshot){
-                          //    if (snapshot.connectionState == ConnectionState.waiting) {
-                          //         return Center(child: CircularProgressIndicator());
-                          //       }
-                          //    if (snapshot.hasError) {
-                          //     return Text("Error: ${snapshot.error}");
-                          //   } 
-                          //   if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-                          //         return Container(); // No comments
-                          //       } else {
-                          //         List<Tweet> comments = snapshot.data!;
-                          //         comments = comments.where((comment) => comment.id != t.id).toList();
-                          //         return Column(
-                          //           children: comments.map((comment) {
-                          //             return Container(
-                          //               margin: EdgeInsets.only(left: 50, top: 20),
-                          //               child: Column(
-                          //                  crossAxisAlignment: CrossAxisAlignment.start,
-                          //                 children: [
-                          //                            Text(comment.description, style: TextStyle(fontSize: 16)), 
-                          //                 ],
-                                            
-                          //               ),
-                          //             );
-                          //           }).toList(),
-                          //         );
-
-
-                          //  }})
-
+                           FutureBuilder<List<Comment>>(
+                    future: DatabaseHelper.instance.getCommentsForTweet(t.id),
+                    builder: (BuildContext context, AsyncSnapshot<List<Comment>> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator(color: Colors.blue));
+                      }
+                      if (snapshot.hasError) {
+                        return Text("Error: ${snapshot.error}");
+                      }
+                      if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                        return Container(); // No comments
+                      } else {
+                        List<Comment> comments = snapshot.data!;
+                        return Column(
+                          children: comments.map((comment) {
+                            return Container(
+                              color: Color.fromARGB(248, 255, 255, 255),
+                              margin: EdgeInsets.only(left: 10, top: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    CircleAvatar(backgroundColor: Color(Random().nextInt(0xffffffff)),
+                                    child: Text(comment.name.substring(0,1).toUpperCase().toString(),
+                                    )
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text('@${comment.username} ${comment.name}', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ],),
+                                  Container(margin: EdgeInsets.only(left:20),
+                                    child: Column(children: [ Text(comment.text, style: TextStyle(fontSize: 16),textAlign:TextAlign.left,),
+                                    Text(comment.timestamp.substring(0,5),textAlign: TextAlign.start,),],),
+                                  )
+                                 
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      } 
+                  })
 
                         ],
                       ),
@@ -161,10 +188,41 @@ class _HomePage extends State<HomePage>{
                   
                     IconButton(
                       icon: Icon(Icons.expand_more),
-                      onPressed: () {
+                      onPressed: ()  {
+                        showDialog(
+                          barrierDismissible: false,
+                          context: context, builder: (context){
+                            return AlertDialog(
+                              backgroundColor: const Color.fromARGB(255, 0, 140, 255),
+                              iconColor: Colors.white,
+                                          title: const Text('Confirmation',style: TextStyle(color:Colors.white)),
+                                          content: const Text('Are you sure you want to hide tweet?',style:TextStyle(color: Colors.white)),
+                                          actions: [
+                                            TextButton(onPressed: (){
+                                              Navigator.of(context).pop();
+                                            }, child: const Text('No',style:TextStyle(color:Colors.white))),
+                                            TextButton(onPressed: () async{
+                                              Navigator.of(context).pop();
+
+                                              // delete student
+
+                                              int result = await DatabaseHelper.instance.deleteTweet(t.id!);
+                                              if( result > 0 ){
+                                                Fluttertoast.showToast(msg: 'Tweet Deleted');
+                                                setState((){});
+                                                // build function will be called
+                                              }
+
+                                            }, child: const Text('Yes',style:TextStyle(color:Colors.white))),
+
+                                          ],
+                                        );
+                          }
+                        );
                   
                       },
                     ),
+
                   ],
                 ),
               );
